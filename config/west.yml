@@ -11,10 +11,8 @@ manifest:
       remote: zmkfirmware
       revision: main
       import: app/west.yml
-    - name: zmk-pmw3610-driver
-      remote: hyhy-masa
-      revision: main
-    - name: zmk-rgbled-widget  # <-- new entry
+    # zmk-pmw3610-driver 已移除：Zephyr 4.1 内建 PMW3610 驅動
+    - name: zmk-rgbled-widget
       remote: caksoylar
       revision: main
   self:

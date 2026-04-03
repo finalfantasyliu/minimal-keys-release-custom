@@ -1,5 +1,9 @@
 #include "minimal-keys.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <input/processors.dtsi>
+
 &xiao_serial { status = "disabled"; };
+
 &default_transform {
     col-offset = <6>;
 };
@@ -12,11 +16,11 @@
         , <&xiao_d 9 GPIO_ACTIVE_HIGH>   // Col3: P1.14_D9_MISO
         , <&xiao_d 8 GPIO_ACTIVE_HIGH>   // Col4: P1.13_D8_SCK
         ;
-    row-gpios 
-        = <&xiao_d 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  // Row0 (P0.03)
-        , <&xiao_d 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  // Row1 (P0.02)
-        , <&xiao_d 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row2 (P0.28)
-        , <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)> // Row3 (動作確認済み)
+    row-gpios
+        = <&xiao_d 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  // Row0
+        , <&xiao_d 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  // Row1
+        , <&xiao_d 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  // Row2
+        , <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  // Row3
         ;
 };
 
@@ -39,10 +43,28 @@
     };
 };
 
+// AML 防誤觸：打字 200ms 內不觸發，MB1/MB2 不退出 MOUSE 層
+&zip_temp_layer {
+    require-prior-idle-ms = <200>;
+    excluded-positions = <22 10>;  // MB1, MB2（左半 inner column）
+};
+
 / {
     trackball_listener {
         compatible = "zmk,input-listener";
         device = <&trackball>;
+
+        // 自動滑鼠層：軌跡球移動 → MOUSE 層，2 秒後退出
+        input-processors =
+            <&zip_temp_layer 5 2000>;
+
+        // 捲動模式：SCROLL 層（Layer 6）啟用時軌跡球變捲輪
+        scroller {
+            layers = <6>;
+            input-processors =
+                <&zip_xy_to_scroll_mapper>,
+                <&zip_scroll_scaler 1 8>;
+        };
     };
 };
 
@@ -59,8 +81,10 @@
         compatible = "pixart,pmw3610";
         reg = <0>;
         spi-max-frequency = <2000000>;
-        irq-gpios = <&xiao_d 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-        scroll-layers = <6>;    // SCROLL layer
-        automouse-layer = <5>;  // MOUSE layer
+        motion-gpios = <&xiao_d 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        zephyr,axis-x = <INPUT_REL_X>;
+        zephyr,axis-y = <INPUT_REL_Y>;
+        res-cpi = <1600>;
+        smart-mode;
     };
 };
