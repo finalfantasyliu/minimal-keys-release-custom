@@ -54,8 +54,9 @@
         compatible = "zmk,input-listener";
         device = <&trackball>;
 
-        // 自動滑鼠層：軌跡球移動 → MOUSE 層，2 秒後退出
+        // 軸向校正 + 自動滑鼠層
         input-processors =
+            <&zip_xy_transform INPUT_TRANSFORM_Y_INVERT>,
             <&zip_temp_layer 5 2000>;
 
         // 捲動模式：SCROLL 層（Layer 6）啟用時軌跡球變捲輪
